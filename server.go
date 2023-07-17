@@ -5,27 +5,14 @@ import (
 	"fmt"
 	"log"
 	"net"
-	"strings"
+
+	"server/http"
 )
 
 var (
 	ip   = flag.String("ip", "127.0.0.1", "IP Address")
 	port = flag.String("port", "8888", "Port")
 )
-
-func generateResponse(req string) (int, string) {
-	reqTopLine := strings.Split(req, "\n")[0]
-	httpArray := strings.Split(reqTopLine, " ")
-	if len(httpArray) != 3 {
-		return 400, "Bad Request"
-	}
-
-	if httpArray[0] != "GET" || !strings.Contains(httpArray[2], "HTTP/1.1") {
-		return 400, "Bad Request"
-	}
-
-	return 200, "OK"
-}
 
 func main() {
 	flag.Parse()
@@ -48,18 +35,27 @@ func main() {
 		buf := make([]byte, 1500)
 
 		go func() {
+			defer conn.Close()
 			fmt.Printf("[Remote Address]\n%s\n", conn.RemoteAddr())
 
 			n, _ := conn.Read(buf)
-			req := string(buf[:n])
-			fmt.Printf("[Message]\n%s", req)
-			statusCode, mes := generateResponse(req)
-			res := fmt.Sprintf("HTTP/1.1 %d %s\nContent-Type: text/html\nHello!", statusCode, mes)
-			fmt.Println(res)
+			reqMessage := string(buf[:n])
+			fmt.Printf("[Message]\n%s", reqMessage)
 
-			conn.Write([]byte(res))
+			req, isValid := http.CheckRequest(reqMessage)
 
-			conn.Close()
+			res, contentType, err := http.ReadFile(req.Path)
+			if !isValid {
+				conn.Write([]byte(http.GenerateResponse(400, "", "")))
+			} else if err != nil {
+				notFoundRes, contentType, err := http.ReadFile("404.html")
+				if err != nil {
+					log.Fatal("Failed to load 404.html")
+				}
+				conn.Write([]byte(http.GenerateResponse(404, contentType, notFoundRes)))
+			} else {
+				conn.Write([]byte(http.GenerateResponse(200, contentType, res)))
+			}
 		}()
 	}
 }
