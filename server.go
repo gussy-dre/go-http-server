@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"strings"
 
 	"server/http"
 )
@@ -24,7 +25,7 @@ func main() {
 		log.Fatalf("Faild to listen %s\n", address)
 	}
 	defer listener.Close()
-	fmt.Printf("Now listening %s\n", address)
+	fmt.Printf("Now listening %s\n\n", address)
 
 	for {
 		conn, err := listener.Accept()
@@ -36,25 +37,40 @@ func main() {
 
 		go func() {
 			defer conn.Close()
-			fmt.Printf("[Remote Address]\n%s\n", conn.RemoteAddr())
+			fmt.Printf("[Remote Address]\n%s\n\n", conn.RemoteAddr())
 
-			n, _ := conn.Read(buf)
-			reqMessage := string(buf[:n])
-			fmt.Printf("[Message]\n%s", reqMessage)
+			reqMessage := ""
+			for {
+				n, _ := conn.Read(buf)
+				reqMessage += string(buf[:n])
+				if strings.HasSuffix(reqMessage, "\r\n\r\n") {
+					break
+				}
+			}
+			fmt.Printf("[Request Message]\n%s", reqMessage)
 
 			req, isValid := http.CheckRequest(reqMessage)
 
 			res, contentType, err := http.ReadFile(req.Path)
 			if !isValid {
-				conn.Write([]byte(http.GenerateResponse(400, "", "")))
+				resMessage := http.GenerateResponse(400, "", "")
+				fmt.Printf("[Response Status Code] %s\n\n", "400")
+				//fmt.Printf("[Response Message]\n%s\n\n", resMessage)
+				conn.Write([]byte(resMessage))
 			} else if err != nil {
-				notFoundRes, contentType, err := http.ReadFile("404.html")
+				notFoundRes, contentType, err := http.ReadFile("/404.html")
 				if err != nil {
 					log.Fatal("Failed to load 404.html")
 				}
-				conn.Write([]byte(http.GenerateResponse(404, contentType, notFoundRes)))
+				resMessage := http.GenerateResponse(404, contentType, notFoundRes)
+				fmt.Printf("[Response Status Code] %s\n\n", "404")
+				//fmt.Printf("[Response Message]\n%s\n\n", resMessage)
+				conn.Write([]byte(resMessage))
 			} else {
-				conn.Write([]byte(http.GenerateResponse(200, contentType, res)))
+				resMessage := http.GenerateResponse(200, contentType, res)
+				fmt.Printf("[Response Status Code] %s\n\n", "200")
+				//fmt.Printf("[Response Message]\n%s\n\n", resMessage)
+				conn.Write([]byte(resMessage))
 			}
 		}()
 	}
