@@ -6,6 +6,8 @@ import (
 	"log"
 	"net"
 	"strings"
+
+	"server/http"
 )
 
 var (
@@ -47,10 +49,25 @@ func main() {
 			}
 			log.Printf("[Request Message]\n%s", reqMessage)
 
-			// 個々を実装する
-			resMessage := reqMessage
+			statusCode := 200
+			req, isValid := http.CheckRequest(reqMessage)
+			if !isValid {
+				statusCode = 400
+				resMessage := http.GenerateResponse(statusCode, "", "")
+				log.Printf("[Response Status Code] %d\n\n", statusCode)
+				//log.Printf("[Response Message]\n%s\n\n", resMessage)
+				conn.Write([]byte(resMessage))
+				return
+			}
 
-			log.Printf("[Response Status Code] %s\n\n", "200")
+			content, contentType, isFound, err := http.ReadFile(req.Path)
+			if err != nil {
+				log.Fatalf("Failed to load file: %s\n", err)
+			} else if isFound {
+				statusCode = 404
+			}
+			resMessage := http.GenerateResponse(statusCode, contentType, content)
+			log.Printf("[Response Status Code] %d\n\n", statusCode)
 			//log.Printf("[Response Message]\n%s\n\n", resMessage)
 			conn.Write([]byte(resMessage))
 		}()
