@@ -18,10 +18,11 @@ func GenerateResponse(statusCode int, contentType string, body string) string {
 		message = "Not Found"
 	}
 
-	response := fmt.Sprintf("HTTP/1.1 %d %s\n", statusCode, message)
+	response := fmt.Sprintf("HTTP/1.1 %d %s\r\n", statusCode, message)
 	if len(body) > 0 {
-		response += fmt.Sprintf("Content-Type: %s\n\n%s", contentType, body)
+		response += fmt.Sprintf("Content-Type: %s\r\n\r\n%s\r\n", contentType, body)
 	}
+	response += "\r\n"
 
 	return response
 }
