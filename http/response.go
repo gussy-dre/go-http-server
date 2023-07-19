@@ -28,32 +28,32 @@ func GenerateResponse(statusCode int, contentType string, body string, connectio
 		ContentType:   contentType,
 		Body:          body,
 	}
-	response := fmt.Sprintf("%s %d %s\r\n", res.HTTPVersion, res.StatusCode, res.Message)
+	resString := fmt.Sprintf("%s %d %s\r\n", res.HTTPVersion, res.StatusCode, res.Message)
 
 	if res.StatusCode == 400 {
-		response += "\r\n"
-		return response
+		resString += "\r\n"
+		return resString
 	}
 
 	if len(res.ContentType) > 0 {
-		response += fmt.Sprintf("Content-Type: %s\r\n", contentType)
+		resString += fmt.Sprintf("Content-Type: %s\r\n", contentType)
 	}
 
 	if connection == "Close" {
 		res.Connection = connection
 	}
-	response += fmt.Sprintf("Connection: %s\r\n", res.Connection)
+	resString += fmt.Sprintf("Connection: %s\r\n", res.Connection)
 
 	if res.ContentLength != 0 {
-		response += fmt.Sprintf("Content-Length: %d\r\n", res.ContentLength)
+		resString += fmt.Sprintf("Content-Length: %d\r\n", res.ContentLength)
 	}
 
 	if len(res.Body) > 0 {
-		response += fmt.Sprintf("\r\n%s", body)
+		resString += fmt.Sprintf("\r\n%s", body)
 	}
 
-	response += "\r\n"
-	return response
+	resString += "\r\n"
+	return resString
 }
 
 func ReadFile(path string) (string, string, error) {
