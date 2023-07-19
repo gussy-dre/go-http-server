@@ -77,14 +77,14 @@ func main() {
 					break
 				}
 
-				res, contentType, isFound, err := http.ReadFile(req.Path)
+				content, contentType, isFound, err := http.ReadFile(req.Path)
 				if err != nil {
 					log.Println("Failed to load 404.html")
 					break
 				} else if !isFound {
 					statusCode = 404
 				}
-				resMessage := http.GenerateResponse(statusCode, contentType, res, req.Connection)
+				resMessage := http.GenerateResponse(statusCode, contentType, content, req.Connection)
 				log.Printf("[Response Status Code] %d\n\n", statusCode)
 				//log.Printf("[Response Message]\n%s\n\n", resMessage)
 				conn.Write([]byte(resMessage))
