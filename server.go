@@ -39,38 +39,44 @@ func main() {
 			defer conn.Close()
 			fmt.Printf("[Remote Address]\n%s\n\n", conn.RemoteAddr())
 
-			reqMessage := ""
 			for {
-				n, _ := conn.Read(buf)
-				reqMessage += string(buf[:n])
-				if strings.HasSuffix(reqMessage, "\r\n\r\n") {
+				reqMessage := ""
+				for {
+					n, _ := conn.Read(buf)
+					reqMessage += string(buf[:n])
+					if strings.HasSuffix(reqMessage, "\r\n\r\n") {
+						break
+					}
+				}
+				fmt.Printf("[Request Message]\n%s", reqMessage)
+
+				req, isValid := http.CheckRequest(reqMessage)
+
+				res, contentType, err := http.ReadFile(req.Path)
+				if !isValid {
+					resMessage := http.GenerateResponse(400, "", "", req.Connection)
+					fmt.Printf("[Response Status Code] %d\n\n", 400)
+					//fmt.Printf("[Response Message]\n%s\n\n", resMessage)
+					conn.Write([]byte(resMessage))
+				} else if err != nil {
+					notFoundRes, contentType, err := http.ReadFile("/404.html")
+					if err != nil {
+						log.Fatal("Failed to load 404.html")
+					}
+					resMessage := http.GenerateResponse(404, contentType, notFoundRes, req.Connection)
+					fmt.Printf("[Response Status Code] %d\n\n", 404)
+					//fmt.Printf("[Response Message]\n%s\n\n", resMessage)
+					conn.Write([]byte(resMessage))
+				} else {
+					resMessage := http.GenerateResponse(200, contentType, res, req.Connection)
+					fmt.Printf("[Response Status Code] %d\n\n", 200)
+					//fmt.Printf("[Response Message]\n%s\n\n", resMessage)
+					conn.Write([]byte(resMessage))
+				}
+
+				if req.Connection == "Close" {
 					break
 				}
-			}
-			fmt.Printf("[Request Message]\n%s", reqMessage)
-
-			req, isValid := http.CheckRequest(reqMessage)
-
-			res, contentType, err := http.ReadFile(req.Path)
-			if !isValid {
-				resMessage := http.GenerateResponse(400, "", "")
-				fmt.Printf("[Response Status Code] %d\n\n", 400)
-				//fmt.Printf("[Response Message]\n%s\n\n", resMessage)
-				conn.Write([]byte(resMessage))
-			} else if err != nil {
-				notFoundRes, contentType, err := http.ReadFile("/404.html")
-				if err != nil {
-					log.Fatal("Failed to load 404.html")
-				}
-				resMessage := http.GenerateResponse(404, contentType, notFoundRes)
-				fmt.Printf("[Response Status Code] %d\n\n", 404)
-				//fmt.Printf("[Response Message]\n%s\n\n", resMessage)
-				conn.Write([]byte(resMessage))
-			} else {
-				resMessage := http.GenerateResponse(200, contentType, res)
-				fmt.Printf("[Response Status Code] %d\n\n", 200)
-				//fmt.Printf("[Response Message]\n%s\n\n", resMessage)
-				conn.Write([]byte(resMessage))
 			}
 		}()
 	}

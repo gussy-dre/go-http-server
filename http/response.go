@@ -18,29 +18,37 @@ type Response struct {
 	Body          string
 }
 
-func GenerateResponse(statusCode int, contentType string, body string) string {
+func GenerateResponse(statusCode int, contentType string, body string, connection string) string {
 	res := &Response{
 		StatusCode:    statusCode,
 		Message:       generateResponseMessage(statusCode),
 		HTTPVersion:   "HTTP/1.1",
-		Connection:    "",
+		Connection:    "Keep-Alive",
 		ContentLength: len(body),
 		ContentType:   contentType,
 		Body:          body,
 	}
 
 	response := fmt.Sprintf("%s %d %s\r\n", res.HTTPVersion, res.StatusCode, res.Message)
+
 	if len(res.ContentType) > 0 {
 		response += fmt.Sprintf("Content-Type: %s\r\n", contentType)
 	}
+
+	if connection == "Close" {
+		res.Connection = connection
+	}
+	response += fmt.Sprintf("Connection: %s\r\n", res.Connection)
+
 	if res.ContentLength != 0 {
 		response += fmt.Sprintf("Content-Length: %d\r\n", res.ContentLength)
 	}
+
 	if len(res.Body) > 0 {
 		response += fmt.Sprintf("\r\n%s", body)
 	}
-	response += "\r\n"
 
+	response += "\r\n"
 	return response
 }
 
