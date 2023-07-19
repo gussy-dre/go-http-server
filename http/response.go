@@ -9,27 +9,32 @@ import (
 )
 
 type Response struct {
-	StatusCode  int
-	Message     string
-	HTTPVersion string
-	Connection  string
-	ContentType string
-	Body        string
+	StatusCode    int
+	Message       string
+	HTTPVersion   string
+	Connection    string
+	ContentLength int
+	ContentType   string
+	Body          string
 }
 
 func GenerateResponse(statusCode int, contentType string, body string) string {
 	res := &Response{
-		StatusCode:  statusCode,
-		Message:     generateResponseMessage(statusCode),
-		HTTPVersion: "HTTP/1.1",
-		Connection:  "",
-		ContentType: contentType,
-		Body:        body,
+		StatusCode:    statusCode,
+		Message:       generateResponseMessage(statusCode),
+		HTTPVersion:   "HTTP/1.1",
+		Connection:    "",
+		ContentLength: len(body),
+		ContentType:   contentType,
+		Body:          body,
 	}
 
 	response := fmt.Sprintf("%s %d %s\r\n", res.HTTPVersion, res.StatusCode, res.Message)
 	if len(res.ContentType) > 0 {
 		response += fmt.Sprintf("Content-Type: %s\r\n", contentType)
+	}
+	if res.ContentLength != 0 {
+		response += fmt.Sprintf("Content-Length: %d\r\n", res.ContentLength)
 	}
 	if len(res.Body) > 0 {
 		response += fmt.Sprintf("\r\n%s", body)
