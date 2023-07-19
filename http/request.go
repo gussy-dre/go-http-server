@@ -34,11 +34,12 @@ func CheckRequest(reqMessage string) (*Request, bool) {
 		return req, false
 	}
 
-	if topLineFields[0] == "GET" && strings.Contains(topLineFields[2], "HTTP/1.1") {
-		req.Method = topLineFields[0]
-		req.Path = topLineFields[1]
-		req.HTTPVersion = topLineFields[2]
+	if topLineFields[0] != "GET" || !strings.Contains(topLineFields[2], "HTTP/1.1") {
+		return req, false
 	}
+	req.Method = topLineFields[0]
+	req.Path = topLineFields[1]
+	req.HTTPVersion = topLineFields[2]
 
 	for scanner.Scan() {
 		reqLine := scanner.Text()
