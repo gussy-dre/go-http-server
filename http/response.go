@@ -8,52 +8,42 @@ import (
 	"path/filepath"
 )
 
-type Response struct {
-	StatusCode    int
-	Message       string
-	HTTPVersion   string
-	Connection    string
-	ContentLength int
-	ContentType   string
-	Body          string
+type ResponseHeader struct {
+	StatusCode        int
+	Message           string
+	HTTPVersion       string
+	Connection        string
+	TransferEncording string
+	ContentType       string
 }
 
-func GenerateResponse(statusCode int, contentType string, body string, connection string) string {
-	res := &Response{
-		StatusCode:    statusCode,
-		Message:       generateResponseMessage(statusCode),
-		HTTPVersion:   "HTTP/1.1",
-		Connection:    "Keep-Alive",
-		ContentLength: len(body),
-		ContentType:   contentType,
-		Body:          body,
+func GenerateResponseHeader(statusCode int, contentType string, connection string) string {
+	resHeader := &ResponseHeader{
+		StatusCode:        statusCode,
+		Message:           generateResponseMessage(statusCode),
+		HTTPVersion:       "HTTP/1.1",
+		Connection:        "Keep-Alive",
+		TransferEncording: "chunked",
+		ContentType:       contentType,
 	}
-	resString := fmt.Sprintf("%s %d %s\r\n", res.HTTPVersion, res.StatusCode, res.Message)
+	resHeaderString := fmt.Sprintf("%s %d %s\r\n", resHeader.HTTPVersion, resHeader.StatusCode, resHeader.Message)
 
-	if res.StatusCode == 400 {
-		resString += "\r\n"
-		return resString
+	if resHeader.StatusCode == 400 {
+		resHeaderString += "\r\n"
+		return resHeaderString
 	}
 
-	if len(res.ContentType) > 0 {
-		resString += fmt.Sprintf("Content-Type: %s\r\n", res.ContentType)
+	if len(resHeader.ContentType) > 0 {
+		resHeaderString += fmt.Sprintf("Content-Type: %s\r\n", resHeader.ContentType)
 	}
 
 	if connection == "Close" {
-		res.Connection = connection
+		resHeader.Connection = connection
 	}
-	resString += fmt.Sprintf("Connection: %s\r\n", res.Connection)
+	resHeaderString += fmt.Sprintf("Connection: %s\r\n", resHeader.Connection)
 
-	if res.ContentLength != 0 {
-		resString += fmt.Sprintf("Content-Length: %d\r\n", res.ContentLength)
-	}
-
-	if len(res.Body) > 0 {
-		resString += fmt.Sprintf("\r\n%s", body)
-	}
-
-	resString += "\r\n"
-	return resString
+	resHeaderString += "Transfer-Encoding: chunked\r\n\r\n"
+	return resHeaderString
 }
 
 func ReadFile(path string) (string, string, bool, error) {
@@ -71,7 +61,6 @@ func ReadFile(path string) (string, string, bool, error) {
 		if err != nil {
 			log.Fatalf("Failed to open %s: %s\n", path, err)
 		}
-		log.Printf("Failed to open %s: %s\n", path, err)
 	}
 	defer f.Close()
 
