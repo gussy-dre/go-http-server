@@ -6,6 +6,7 @@ import (
 	"log"
 	"net"
 	"strings"
+	"time"
 
 	"server/http"
 )
@@ -27,10 +28,17 @@ func main() {
 	defer listener.Close()
 	fmt.Printf("Now listening %s\n\n", address)
 
+	const timeout = 30 * time.Second
 	for {
 		conn, err := listener.Accept()
 		if err != nil {
 			log.Fatalln("Failed to accept connection")
+		}
+
+		err = conn.SetReadDeadline(time.Now().Add(timeout))
+		if err != nil {
+			log.Println("Failed to set read deadline:", err)
+			continue
 		}
 
 		buf := make([]byte, 1500)
@@ -42,7 +50,15 @@ func main() {
 			for {
 				reqMessage := ""
 				for {
-					n, _ := conn.Read(buf)
+					n, err := conn.Read(buf)
+					if err != nil {
+						if netErr, ok := err.(net.Error); ok && netErr.Timeout() {
+							log.Println("read timeout:", err)
+						} else {
+							log.Println("Failed to read connection:", err)
+						}
+						return
+					}
 					reqMessage += string(buf[:n])
 					if strings.HasSuffix(reqMessage, "\r\n\r\n") {
 						break
