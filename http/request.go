@@ -13,7 +13,6 @@ type Request struct {
 	HTTPVersion string
 	Host        string
 	Connection  string
-	Body        string
 }
 
 func CheckRequest(reqMessage string) (*Request, bool) {
@@ -23,7 +22,6 @@ func CheckRequest(reqMessage string) (*Request, bool) {
 		HTTPVersion: "",
 		Host:        "",
 		Connection:  "",
-		Body:        "",
 	}
 	scanner := bufio.NewScanner(strings.NewReader(reqMessage))
 
