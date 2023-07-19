@@ -67,14 +67,16 @@ func main() {
 				fmt.Printf("[Request Message]\n%s", reqMessage)
 
 				req, isValid := http.CheckRequest(reqMessage)
-
-				res, contentType, err := http.ReadFile(req.Path)
 				if !isValid {
 					resMessage := http.GenerateResponse(400, "", "", req.Connection)
 					fmt.Printf("[Response Status Code] %d\n\n", 400)
 					//fmt.Printf("[Response Message]\n%s\n\n", resMessage)
 					conn.Write([]byte(resMessage))
-				} else if err != nil {
+					break
+				}
+
+				res, contentType, err := http.ReadFile(req.Path)
+				if err != nil {
 					notFoundRes, contentType, err := http.ReadFile("/404.html")
 					if err != nil {
 						log.Fatal("Failed to load 404.html")

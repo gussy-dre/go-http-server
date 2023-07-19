@@ -28,8 +28,12 @@ func GenerateResponse(statusCode int, contentType string, body string, connectio
 		ContentType:   contentType,
 		Body:          body,
 	}
-
 	response := fmt.Sprintf("%s %d %s\r\n", res.HTTPVersion, res.StatusCode, res.Message)
+
+	if res.StatusCode == 400 {
+		response += "\r\n"
+		return response
+	}
 
 	if len(res.ContentType) > 0 {
 		response += fmt.Sprintf("Content-Type: %s\r\n", contentType)
