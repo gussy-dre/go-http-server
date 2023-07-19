@@ -51,14 +51,6 @@ func CheckRequest(reqMessage string) (*Request, bool) {
 		}
 	}
 
-	for scanner.Scan() {
-		reqLine := scanner.Text()
-		if reqLine == "" {
-			reqLine = "\n"
-		}
-		req.Body += reqLine
-	}
-
 	if err := scanner.Err(); err != nil {
 		fmt.Fprintln(os.Stderr, "scanner error:", err)
 		return req, false
