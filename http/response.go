@@ -8,19 +8,31 @@ import (
 	"path/filepath"
 )
 
+type Response struct {
+	StatusCode  int
+	Message     string
+	HTTPVersion string
+	Connection  string
+	ContentType string
+	Body        string
+}
+
 func GenerateResponse(statusCode int, contentType string, body string) string {
-	message := ""
-	if statusCode == 200 {
-		message = "OK"
-	} else if statusCode == 400 {
-		message = "Bad Request"
-	} else if statusCode == 404 {
-		message = "Not Found"
+	res := &Response{
+		StatusCode:  statusCode,
+		Message:     generateResponseMessage(statusCode),
+		HTTPVersion: "HTTP/1.1",
+		Connection:  "",
+		ContentType: contentType,
+		Body:        body,
 	}
 
-	response := fmt.Sprintf("HTTP/1.1 %d %s\r\n", statusCode, message)
-	if len(body) > 0 {
-		response += fmt.Sprintf("Content-Type: %s\r\n\r\n%s\r\n", contentType, body)
+	response := fmt.Sprintf("%s %d %s\r\n", res.HTTPVersion, res.StatusCode, res.Message)
+	if len(res.ContentType) > 0 {
+		response += fmt.Sprintf("Content-Type: %s\r\n", contentType)
+	}
+	if len(res.Body) > 0 {
+		response += fmt.Sprintf("\r\n%s", body)
 	}
 	response += "\r\n"
 
@@ -50,4 +62,17 @@ func ReadFile(path string) (string, string, error) {
 	}
 
 	return string(b), contentType, err
+}
+
+func generateResponseMessage(statusCode int) string {
+	switch statusCode {
+	case 200:
+		return "OK"
+	case 400:
+		return "Bad Request"
+	case 404:
+		return "Not Found"
+	default:
+		return "Internal Server Error"
+	}
 }
