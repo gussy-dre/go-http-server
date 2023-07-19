@@ -2,8 +2,7 @@ package http
 
 import (
 	"bufio"
-	"fmt"
-	"os"
+	"log"
 	"strings"
 )
 
@@ -51,7 +50,7 @@ func CheckRequest(reqMessage string) (*Request, bool) {
 	}
 
 	if err := scanner.Err(); err != nil {
-		fmt.Fprintln(os.Stderr, "scanner error:", err)
+		log.Printf("Failed to scan: %s\n", err)
 		return req, false
 	}
 

@@ -23,21 +23,21 @@ func main() {
 
 	listener, err := net.Listen("tcp", address)
 	if err != nil {
-		log.Fatalf("Faild to listen %s\n", address)
+		log.Printf("Faild to listen %s\n", address)
 	}
 	defer listener.Close()
-	fmt.Printf("Now listening %s\n\n", address)
+	log.Printf("Now listening %s\n\n", address)
 
 	const timeout = 30 * time.Second
 	for {
 		conn, err := listener.Accept()
 		if err != nil {
-			log.Fatalln("Failed to accept connection")
+			log.Println("Failed to accept connection")
 		}
 
 		err = conn.SetReadDeadline(time.Now().Add(timeout))
 		if err != nil {
-			log.Println("Failed to set read deadline:", err)
+			log.Printf("Failed to set read deadline: %s\n", err)
 			continue
 		}
 
@@ -45,7 +45,7 @@ func main() {
 
 		go func() {
 			defer conn.Close()
-			fmt.Printf("[Remote Address]\n%s\n\n", conn.RemoteAddr())
+			log.Printf("[Remote Address]\n%s\n\n", conn.RemoteAddr())
 
 			for {
 				reqMessage := ""
@@ -53,9 +53,9 @@ func main() {
 					n, err := conn.Read(buf)
 					if err != nil {
 						if netErr, ok := err.(net.Error); ok && netErr.Timeout() {
-							log.Println("read timeout:", err)
+							log.Printf("read timeout: %s\n", err)
 						} else {
-							log.Println("Failed to read connection:", err)
+							log.Printf("Failed to read connection: %s\n", err)
 						}
 						return
 					}
@@ -64,13 +64,13 @@ func main() {
 						break
 					}
 				}
-				fmt.Printf("[Request Message]\n%s", reqMessage)
+				log.Printf("[Request Message]\n%s", reqMessage)
 
 				req, isValid := http.CheckRequest(reqMessage)
 				if !isValid {
 					resMessage := http.GenerateResponse(400, "", "", req.Connection)
-					fmt.Printf("[Response Status Code] %d\n\n", 400)
-					//fmt.Printf("[Response Message]\n%s\n\n", resMessage)
+					log.Printf("[Response Status Code] %d\n\n", 400)
+					//log.Printf("[Response Message]\n%s\n\n", resMessage)
 					conn.Write([]byte(resMessage))
 					break
 				}
@@ -79,16 +79,16 @@ func main() {
 				if err != nil {
 					notFoundRes, contentType, err := http.ReadFile("/404.html")
 					if err != nil {
-						log.Fatal("Failed to load 404.html")
+						log.Println("Failed to load 404.html")
 					}
 					resMessage := http.GenerateResponse(404, contentType, notFoundRes, req.Connection)
-					fmt.Printf("[Response Status Code] %d\n\n", 404)
-					//fmt.Printf("[Response Message]\n%s\n\n", resMessage)
+					log.Printf("[Response Status Code] %d\n\n", 404)
+					//log.Printf("[Response Message]\n%s\n\n", resMessage)
 					conn.Write([]byte(resMessage))
 				} else {
 					resMessage := http.GenerateResponse(200, contentType, res, req.Connection)
-					fmt.Printf("[Response Status Code] %d\n\n", 200)
-					//fmt.Printf("[Response Message]\n%s\n\n", resMessage)
+					log.Printf("[Response Status Code] %d\n\n", 200)
+					//log.Printf("[Response Message]\n%s\n\n", resMessage)
 					conn.Write([]byte(resMessage))
 				}
 

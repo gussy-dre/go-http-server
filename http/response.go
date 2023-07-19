@@ -62,7 +62,7 @@ func ReadFile(path string) (string, string, error) {
 	}
 	f, err := os.Open(fmt.Sprintf("public%s", path))
 	if err != nil {
-		log.Print(err, path)
+		log.Printf("Failed to open %s: %s\n", path, err)
 		return "", "", err
 	}
 	defer f.Close()
