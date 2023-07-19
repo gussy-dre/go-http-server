@@ -56,18 +56,31 @@ func GenerateResponse(statusCode int, contentType string, body string, connectio
 	return resString
 }
 
-func ReadFile(path string) (string, string, error) {
+func ReadFile(path string) (string, string, bool, error) {
+	isFound := true
+
 	if path == "/" {
 		path = "/index.html"
 	}
 	f, err := os.Open(fmt.Sprintf("public%s", path))
 	if err != nil {
+		path = "/404.html"
+		isFound = false
+		f, err = os.Open(fmt.Sprintf("public%s", path))
+		if err != nil {
+			log.Printf("Failed to open %s: %s\n", path, err)
+			return "", "", false, err
+		}
 		log.Printf("Failed to open %s: %s\n", path, err)
-		return "", "", err
 	}
 	defer f.Close()
 
 	b, err := io.ReadAll(f)
+	if err != nil {
+		log.Printf("Failed to read %s: %s\n", path, err)
+		return "", "", false, err
+	}
+
 	extension := filepath.Ext(path)
 	contentType := "text/plain"
 	if extension == ".html" {
@@ -78,7 +91,7 @@ func ReadFile(path string) (string, string, error) {
 		contentType = "image/jpeg"
 	}
 
-	return string(b), contentType, err
+	return string(b), contentType, isFound, err
 }
 
 func generateResponseMessage(statusCode int) string {
