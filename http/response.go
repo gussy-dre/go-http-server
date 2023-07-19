@@ -9,51 +9,43 @@ import (
 )
 
 type Response struct {
-	StatusCode    int
-	Message       string
-	HTTPVersion   string
-	Connection    string
-	ContentLength int
-	ContentType   string
-	Body          string
+	StatusCode        int
+	Message           string
+	HTTPVersion       string
+	Connection        string
+	TransferEncording string
+	ContentType       string
+	Body              string
 }
 
-func GenerateResponse(statusCode int, contentType string, body string, connection string) string {
+func GenerateResponseHeader(statusCode int, contentType string, body string, connection string) (string, *Response) {
 	res := &Response{
-		StatusCode:    statusCode,
-		Message:       generateResponseMessage(statusCode),
-		HTTPVersion:   "HTTP/1.1",
-		Connection:    "Keep-Alive",
-		ContentLength: len(body),
-		ContentType:   contentType,
-		Body:          body,
+		StatusCode:        statusCode,
+		Message:           generateResponseMessage(statusCode),
+		HTTPVersion:       "HTTP/1.1",
+		Connection:        "Keep-Alive",
+		TransferEncording: "chunked",
+		ContentType:       contentType,
+		Body:              body,
 	}
-	resString := fmt.Sprintf("%s %d %s\r\n", res.HTTPVersion, res.StatusCode, res.Message)
+	resHeader := fmt.Sprintf("%s %d %s\r\n", res.HTTPVersion, res.StatusCode, res.Message)
 
 	if res.StatusCode == 400 {
-		resString += "\r\n"
-		return resString
+		resHeader += "\r\n"
+		return resHeader, res
 	}
 
 	if len(res.ContentType) > 0 {
-		resString += fmt.Sprintf("Content-Type: %s\r\n", contentType)
+		resHeader += fmt.Sprintf("Content-Type: %s\r\n", contentType)
 	}
 
 	if connection == "Close" {
 		res.Connection = connection
 	}
-	resString += fmt.Sprintf("Connection: %s\r\n", res.Connection)
+	resHeader += fmt.Sprintf("Connection: %s\r\n", res.Connection)
 
-	if res.ContentLength != 0 {
-		resString += fmt.Sprintf("Content-Length: %d\r\n", res.ContentLength)
-	}
-
-	if len(res.Body) > 0 {
-		resString += fmt.Sprintf("\r\n%s", body)
-	}
-
-	resString += "\r\n"
-	return resString
+	resHeader += "Transfer-Encoding: chunked\r\n\r\n"
+	return resHeader, res
 }
 
 func ReadFile(path string) (string, string, bool, error) {

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"flag"
 	"fmt"
 	"log"
@@ -41,7 +42,7 @@ func main() {
 			continue
 		}
 
-		buf := make([]byte, 1500)
+		reqBuffer := make([]byte, 1500)
 
 		go func() {
 			defer conn.Close()
@@ -50,7 +51,7 @@ func main() {
 			for {
 				reqMessage := ""
 				for {
-					n, err := conn.Read(buf)
+					n, err := conn.Read(reqBuffer)
 					if err != nil {
 						if netErr, ok := err.(net.Error); ok && netErr.Timeout() {
 							log.Printf("read timeout: %s\n", err)
@@ -59,7 +60,7 @@ func main() {
 						}
 						return
 					}
-					reqMessage += string(buf[:n])
+					reqMessage += string(reqBuffer[:n])
 					if strings.HasSuffix(reqMessage, "\r\n\r\n") {
 						break
 					}
@@ -70,10 +71,10 @@ func main() {
 				req, isValid := http.CheckRequest(reqMessage)
 				if !isValid {
 					statusCode = 400
-					resMessage := http.GenerateResponse(statusCode, "", "", req.Connection)
+					resHeader, _ := http.GenerateResponseHeader(statusCode, "", "", req.Connection)
 					log.Printf("[Response Status Code] %d\n\n", statusCode)
 					//log.Printf("[Response Message]\n%s\n\n", resMessage)
-					conn.Write([]byte(resMessage))
+					conn.Write([]byte(resHeader))
 					break
 				}
 
@@ -84,10 +85,20 @@ func main() {
 				} else if !isFound {
 					statusCode = 404
 				}
-				resMessage := http.GenerateResponse(statusCode, contentType, content, req.Connection)
+
+				resHeader, res := http.GenerateResponseHeader(statusCode, contentType, content, req.Connection)
 				log.Printf("[Response Status Code] %d\n\n", statusCode)
 				//log.Printf("[Response Message]\n%s\n\n", resMessage)
-				conn.Write([]byte(resMessage))
+				conn.Write([]byte(resHeader))
+
+				chunkBuffer := bytes.NewBufferString(res.Body)
+				for chunkBuffer.Len() != 0 {
+					chunkBytes := chunkBuffer.Next(20)
+					chunk := fmt.Sprintf("%x\r\n%s\r\n", len(chunkBytes), string(chunkBytes))
+					conn.Write([]byte(chunk))
+				}
+				body := "0\r\n\r\n"
+				conn.Write([]byte(body))
 
 				if req.Connection == "Close" {
 					break
