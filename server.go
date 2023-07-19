@@ -6,6 +6,7 @@ import (
 	"log"
 	"net"
 	"strings"
+	"time"
 
 	"server/http"
 )
@@ -27,10 +28,16 @@ func main() {
 	defer listener.Close()
 	log.Printf("Now listening %s\n\n", address)
 
+	const timeout = 30 * time.Second
 	for {
 		conn, err := listener.Accept()
 		if err != nil {
 			log.Fatalf("Failed to accept connection: %s\n", err)
+		}
+
+		err = conn.SetReadDeadline(time.Now().Add(timeout))
+		if err != nil {
+			log.Fatalf("Failed to set read deadline: %s\n", err)
 		}
 
 		buf := make([]byte, 1500)
@@ -39,37 +46,51 @@ func main() {
 			defer conn.Close()
 			log.Printf("[Remote Address] %s\n\n", conn.RemoteAddr())
 
-			reqMessage := ""
 			for {
-				n, _ := conn.Read(buf)
-				reqMessage += string(buf[:n])
-				if strings.HasSuffix(reqMessage, "\r\n\r\n") {
+				reqMessage := ""
+				for {
+					n, err := conn.Read(buf)
+					if err != nil {
+						if netErr, ok := err.(net.Error); ok && netErr.Timeout() {
+							log.Printf("read timeout: %s\n", err)
+						} else {
+							log.Printf("Failed to read connection: %s\n", err)
+						}
+						return
+					}
+					reqMessage += string(buf[:n])
+					if strings.HasSuffix(reqMessage, "\r\n\r\n") {
+						break
+					}
+				}
+				log.Printf("[Request Message]\n%s", reqMessage)
+
+				statusCode := 200
+				req, isValid := http.CheckRequest(reqMessage)
+				if !isValid {
+					statusCode = 400
+					resMessage := http.GenerateResponse(statusCode, "", "", req.Connection)
+					log.Printf("[Response Status Code] %d\n\n", statusCode)
+					//log.Printf("[Response Message]\n%s\n\n", resMessage)
+					conn.Write([]byte(resMessage))
 					break
 				}
-			}
-			log.Printf("[Request Message]\n%s", reqMessage)
 
-			statusCode := 200
-			req, isValid := http.CheckRequest(reqMessage)
-			if !isValid {
-				statusCode = 400
-				resMessage := http.GenerateResponse(statusCode, "", "")
+				content, contentType, isFound, err := http.ReadFile(req.Path)
+				if err != nil {
+					log.Fatalf("Failed to load file: %s\n", err)
+				} else if !isFound {
+					statusCode = 404
+				}
+				resMessage := http.GenerateResponse(statusCode, contentType, content, req.Connection)
 				log.Printf("[Response Status Code] %d\n\n", statusCode)
 				//log.Printf("[Response Message]\n%s\n\n", resMessage)
 				conn.Write([]byte(resMessage))
-				return
-			}
 
-			content, contentType, isFound, err := http.ReadFile(req.Path)
-			if err != nil {
-				log.Fatalf("Failed to load file: %s\n", err)
-			} else if isFound {
-				statusCode = 404
+				if req.Connection == "Close" {
+					break
+				}
 			}
-			resMessage := http.GenerateResponse(statusCode, contentType, content)
-			log.Printf("[Response Status Code] %d\n\n", statusCode)
-			//log.Printf("[Response Message]\n%s\n\n", resMessage)
-			conn.Write([]byte(resMessage))
 		}()
 	}
 }
