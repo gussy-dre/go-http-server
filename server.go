@@ -66,10 +66,12 @@ func main() {
 				}
 				log.Printf("[Request Message]\n%s", reqMessage)
 
+				statusCode := 200
 				req, isValid := http.CheckRequest(reqMessage)
 				if !isValid {
-					resMessage := http.GenerateResponse(400, "", "", req.Connection)
-					log.Printf("[Response Status Code] %d\n\n", 400)
+					statusCode = 400
+					resMessage := http.GenerateResponse(statusCode, "", "", req.Connection)
+					log.Printf("[Response Status Code] %d\n\n", statusCode)
 					//log.Printf("[Response Message]\n%s\n\n", resMessage)
 					conn.Write([]byte(resMessage))
 					break
@@ -80,16 +82,12 @@ func main() {
 					log.Println("Failed to load 404.html")
 					break
 				} else if !isFound {
-					resMessage := http.GenerateResponse(404, contentType, res, req.Connection)
-					log.Printf("[Response Status Code] %d\n\n", 404)
-					//log.Printf("[Response Message]\n%s\n\n", resMessage)
-					conn.Write([]byte(resMessage))
-				} else {
-					resMessage := http.GenerateResponse(200, contentType, res, req.Connection)
-					log.Printf("[Response Status Code] %d\n\n", 200)
-					//log.Printf("[Response Message]\n%s\n\n", resMessage)
-					conn.Write([]byte(resMessage))
+					statusCode = 404
 				}
+				resMessage := http.GenerateResponse(statusCode, contentType, res, req.Connection)
+				log.Printf("[Response Status Code] %d\n\n", statusCode)
+				//log.Printf("[Response Message]\n%s\n\n", resMessage)
+				conn.Write([]byte(resMessage))
 
 				if req.Connection == "Close" {
 					break
