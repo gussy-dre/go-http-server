@@ -34,7 +34,7 @@ func GenerateResponseHeader(statusCode int, contentType string, connection strin
 	}
 
 	if len(resHeader.ContentType) > 0 {
-		resHeaderString += fmt.Sprintf("Content-Type: %s\r\n", contentType)
+		resHeaderString += fmt.Sprintf("Content-Type: %s\r\n", resHeader.ContentType)
 	}
 
 	if connection == "Close" {
