@@ -70,10 +70,10 @@ func main() {
 				req, isValid := http.CheckRequest(reqMessage)
 				if !isValid {
 					statusCode = 400
-					resHeader, _ := http.GenerateResponseHeader(statusCode, "", "", req.Connection)
-					log.Printf("[Response Status Code] %d\n\n", statusCode)
-					//log.Printf("[Response Message]\n%s\n\n", resMessage)
-					conn.Write([]byte(resHeader))
+					resHeaderString := http.GenerateResponseHeader(statusCode, "", req.Connection)
+					log.Printf("[ResponseHeader Status Code] %d\n\n", statusCode)
+					//log.Printf("[ResponseHeader Message]\n%s\n\n", resMessage)
+					conn.Write([]byte(resHeaderString))
 					break
 				}
 
@@ -84,12 +84,12 @@ func main() {
 					statusCode = 404
 				}
 
-				resHeader, res := http.GenerateResponseHeader(statusCode, contentType, content, req.Connection)
-				log.Printf("[Response Status Code] %d\n\n", statusCode)
-				//log.Printf("[Response Message]\n%s\n\n", resMessage)
-				conn.Write([]byte(resHeader))
+				resHeaderString := http.GenerateResponseHeader(statusCode, contentType, req.Connection)
+				log.Printf("[ResponseHeader Status Code] %d\n\n", statusCode)
+				//log.Printf("[ResponseHeader Message]\n%s\n\n", resMessage)
+				conn.Write([]byte(resHeaderString))
 
-				chunkBuffer := bytes.NewBufferString(res.Body)
+				chunkBuffer := bytes.NewBufferString(content)
 				for chunkBuffer.Len() != 0 {
 					chunkBytes := chunkBuffer.Next(20)
 					chunk := fmt.Sprintf("%x\r\n%s\r\n", len(chunkBytes), string(chunkBytes))

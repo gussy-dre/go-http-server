@@ -8,44 +8,42 @@ import (
 	"path/filepath"
 )
 
-type Response struct {
+type ResponseHeader struct {
 	StatusCode        int
 	Message           string
 	HTTPVersion       string
 	Connection        string
 	TransferEncording string
 	ContentType       string
-	Body              string
 }
 
-func GenerateResponseHeader(statusCode int, contentType string, body string, connection string) (string, *Response) {
-	res := &Response{
+func GenerateResponseHeader(statusCode int, contentType string, connection string) string {
+	resHeader := &ResponseHeader{
 		StatusCode:        statusCode,
 		Message:           generateResponseMessage(statusCode),
 		HTTPVersion:       "HTTP/1.1",
 		Connection:        "Keep-Alive",
 		TransferEncording: "chunked",
 		ContentType:       contentType,
-		Body:              body,
 	}
-	resHeader := fmt.Sprintf("%s %d %s\r\n", res.HTTPVersion, res.StatusCode, res.Message)
+	resHeaderString := fmt.Sprintf("%s %d %s\r\n", resHeader.HTTPVersion, resHeader.StatusCode, resHeader.Message)
 
-	if res.StatusCode == 400 {
-		resHeader += "\r\n"
-		return resHeader, res
+	if resHeader.StatusCode == 400 {
+		resHeaderString += "\r\n"
+		return resHeaderString
 	}
 
-	if len(res.ContentType) > 0 {
-		resHeader += fmt.Sprintf("Content-Type: %s\r\n", contentType)
+	if len(resHeader.ContentType) > 0 {
+		resHeaderString += fmt.Sprintf("Content-Type: %s\r\n", contentType)
 	}
 
 	if connection == "Close" {
-		res.Connection = connection
+		resHeader.Connection = connection
 	}
-	resHeader += fmt.Sprintf("Connection: %s\r\n", res.Connection)
+	resHeaderString += fmt.Sprintf("Connection: %s\r\n", resHeader.Connection)
 
-	resHeader += "Transfer-Encoding: chunked\r\n\r\n"
-	return resHeader, res
+	resHeaderString += "Transfer-Encoding: chunked\r\n\r\n"
+	return resHeaderString
 }
 
 func ReadFile(path string) (string, string, bool, error) {
