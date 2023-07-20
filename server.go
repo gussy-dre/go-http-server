@@ -55,7 +55,7 @@ func main() {
 						if netErr, ok := err.(net.Error); ok && netErr.Timeout() {
 							log.Printf("read timeout: %s\n", err)
 						} else {
-							log.Fatalf("Failed to read connection: %s\n", err)
+							log.Printf("Failed to read connection: %s\n", err)
 						}
 						return
 					}
