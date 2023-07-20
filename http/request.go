@@ -53,6 +53,10 @@ func CheckRequest(reqMessage string) (*Request, bool) {
 		}
 	}
 
+	if len(req.Host) == 0 {
+		return req, false
+	}
+
 	if err := scanner.Err(); err != nil {
 		log.Fatalf("Failed to scan: %s\n", err)
 	}
