@@ -45,7 +45,7 @@ func main() {
 
 		go func() {
 			defer conn.Close()
-			log.Printf("[Remote Address]\n%s\n\n", conn.RemoteAddr())
+			log.Printf("[Remote Address] %s\n\n", conn.RemoteAddr())
 
 			for {
 				reqMessage := ""
