@@ -50,8 +50,7 @@ func CheckRequest(reqMessage string) (*Request, bool) {
 	}
 
 	if err := scanner.Err(); err != nil {
-		log.Printf("Failed to scan: %s\n", err)
-		return req, false
+		log.Fatalf("Failed to scan: %s\n", err)
 	}
 
 	return req, true

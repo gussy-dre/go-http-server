@@ -56,21 +56,19 @@ func ReadFile(path string) (string, string, bool, error) {
 	}
 	f, err := os.Open(fmt.Sprintf("public%s", path))
 	if err != nil {
+		log.Printf("Failed to open %s: %s\n", path, err)
 		path = "/404.html"
 		isFound = false
 		f, err = os.Open(fmt.Sprintf("public%s", path))
 		if err != nil {
-			log.Printf("Failed to open %s: %s\n", path, err)
-			return "", "", false, err
+			log.Fatalf("Failed to open %s: %s\n", path, err)
 		}
-		log.Printf("Failed to open %s: %s\n", path, err)
 	}
 	defer f.Close()
 
 	b, err := io.ReadAll(f)
 	if err != nil {
-		log.Printf("Failed to read %s: %s\n", path, err)
-		return "", "", false, err
+		log.Fatalf("Failed to read %s: %s\n", path, err)
 	}
 
 	extension := filepath.Ext(path)

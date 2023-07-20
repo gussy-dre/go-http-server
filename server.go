@@ -24,7 +24,7 @@ func main() {
 
 	listener, err := net.Listen("tcp", address)
 	if err != nil {
-		log.Printf("Faild to listen %s\n", address)
+		log.Fatalf("Faild to listen %s\n", address)
 	}
 	defer listener.Close()
 	log.Printf("Now listening %s\n\n", address)
@@ -33,13 +33,12 @@ func main() {
 	for {
 		conn, err := listener.Accept()
 		if err != nil {
-			log.Println("Failed to accept connection")
+			log.Fatalf("Failed to accept connection: %s\n", err)
 		}
 
 		err = conn.SetReadDeadline(time.Now().Add(timeout))
 		if err != nil {
-			log.Printf("Failed to set read deadline: %s\n", err)
-			continue
+			log.Fatalf("Failed to set read deadline: %s\n", err)
 		}
 
 		reqBuffer := make([]byte, 1500)
@@ -56,7 +55,7 @@ func main() {
 						if netErr, ok := err.(net.Error); ok && netErr.Timeout() {
 							log.Printf("read timeout: %s\n", err)
 						} else {
-							log.Printf("Failed to read connection: %s\n", err)
+							log.Fatalf("Failed to read connection: %s\n", err)
 						}
 						return
 					}
@@ -80,8 +79,7 @@ func main() {
 
 				content, contentType, isFound, err := http.ReadFile(req.Path)
 				if err != nil {
-					log.Println("Failed to load 404.html")
-					break
+					log.Fatalf("Failed to load file: %s\n", err)
 				} else if !isFound {
 					statusCode = 404
 				}
