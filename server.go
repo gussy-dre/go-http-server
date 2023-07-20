@@ -71,8 +71,8 @@ func main() {
 				if !isValid {
 					statusCode = 400
 					resHeaderString := http.GenerateResponseHeader(statusCode, "", req.Connection)
-					log.Printf("[ResponseHeader Status Code] %d\n\n", statusCode)
-					//log.Printf("[ResponseHeader Message]\n%s\n\n", resMessage)
+					log.Printf("[Response Status Code] %d\n\n", statusCode)
+					//log.Printf("[Response Message]\n%s\n\n", resMessage)
 					conn.Write([]byte(resHeaderString))
 					break
 				}
@@ -85,8 +85,8 @@ func main() {
 				}
 
 				resHeaderString := http.GenerateResponseHeader(statusCode, contentType, req.Connection)
-				log.Printf("[ResponseHeader Status Code] %d\n\n", statusCode)
-				//log.Printf("[ResponseHeader Message]\n%s\n\n", resMessage)
+				log.Printf("[Response Status Code] %d\n\n", statusCode)
+				//log.Printf("[Response Message]\n%s\n\n", resMessage)
 				conn.Write([]byte(resHeaderString))
 
 				chunkBuffer := bytes.NewBufferString(content)
