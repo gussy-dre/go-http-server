@@ -7,20 +7,22 @@ import (
 )
 
 type Request struct {
-	Method      string
-	Path        string
-	HTTPVersion string
-	Host        string
-	Connection  string
+	Method          string
+	Path            string
+	HTTPVersion     string
+	Host            string
+	Connection      string
+	IfModifiedSince string
 }
 
 func CheckRequest(reqMessage string) (*Request, bool) {
 	req := &Request{
-		Method:      "",
-		Path:        "",
-		HTTPVersion: "",
-		Host:        "",
-		Connection:  "",
+		Method:          "",
+		Path:            "",
+		HTTPVersion:     "",
+		Host:            "",
+		Connection:      "",
+		IfModifiedSince: "",
 	}
 	scanner := bufio.NewScanner(strings.NewReader(reqMessage))
 
@@ -44,6 +46,8 @@ func CheckRequest(reqMessage string) (*Request, bool) {
 			req.Host = strings.Replace(reqLine, "Host: ", "", 1)
 		} else if strings.HasPrefix(reqLine, "Connection: ") {
 			req.Connection = strings.Replace(reqLine, "Connection: ", "", 1)
+		} else if strings.HasPrefix(reqLine, "If-Modified-Since: ") {
+			req.IfModifiedSince = strings.Replace(reqLine, "If-Modified-Since: ", "", 1)
 		} else if reqLine == "" {
 			break
 		}
