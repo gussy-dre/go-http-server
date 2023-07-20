@@ -70,21 +70,38 @@ func main() {
 				req, isValid := http.CheckRequest(reqMessage)
 				if !isValid {
 					statusCode = 400
-					resHeaderString := http.GenerateResponseHeader(statusCode, "", req.Connection)
+					resHeaderString := http.GenerateResponseHeader(statusCode, "", req.Connection, "")
 					log.Printf("[Response Status Code] %d\n\n", statusCode)
 					//log.Printf("[Response Message]\n%s\n\n", resMessage)
 					conn.Write([]byte(resHeaderString))
 					break
 				}
 
-				content, contentType, isFound, err := http.ReadFile(req.Path)
+				content, contentType, modString, isFound, err := http.ReadFile(req.Path)
 				if err != nil {
 					log.Fatalf("Failed to load file: %s\n", err)
 				} else if !isFound {
 					statusCode = 404
+				} else if len(req.IfModifiedSince) != 0 {
+					modTime, err := time.Parse(time.RFC1123, modString)
+					if err != nil {
+						log.Fatalf("Failed to parse string to time: %s\n", err)
+					}
+					ifModifiedSinceTime, err := time.Parse(time.RFC1123, req.IfModifiedSince)
+					if err != nil {
+						log.Fatalf("Failed to parse string to time: %s\n", err)
+					}
+
+					if !modTime.After(ifModifiedSinceTime) {
+						statusCode = 304
+						resHeaderString := http.GenerateResponseHeader(statusCode, contentType, req.Connection, modString)
+						log.Printf("[Response Status Code] %d\n\n", statusCode)
+						//log.Printf("[Response Message]\n%s\n\n", resMessage)
+						conn.Write([]byte(resHeaderString))
+					}
 				}
 
-				resHeaderString := http.GenerateResponseHeader(statusCode, contentType, req.Connection)
+				resHeaderString := http.GenerateResponseHeader(statusCode, contentType, req.Connection, modString)
 				log.Printf("[Response Status Code] %d\n\n", statusCode)
 				//log.Printf("[Response Message]\n%s\n\n", resMessage)
 				conn.Write([]byte(resHeaderString))
