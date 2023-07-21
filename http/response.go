@@ -112,6 +112,8 @@ func generateResponseMessage(statusCode int) string {
 	switch statusCode {
 	case 200:
 		return "OK"
+	case 304:
+		return "Not Modified"
 	case 400:
 		return "Bad Request"
 	case 404:
