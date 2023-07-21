@@ -27,7 +27,7 @@ func GenerateResponseHeader(statusCode int, contentType string, connection strin
 		HTTPVersion:       "HTTP/1.1",
 		Connection:        "Keep-Alive",
 		LastModified:      modString,
-		CacheControl:      "max-age=3600",
+		CacheControl:      "public",
 		TransferEncording: "chunked",
 		ContentType:       contentType,
 	}
