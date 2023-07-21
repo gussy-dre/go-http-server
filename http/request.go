@@ -32,8 +32,8 @@ func CheckRequest(reqMessage string) (*Request, bool) {
 	if len(topLineFields) != 3 {
 		return req, false
 	}
-
-	if topLineFields[0] != "GET" || !strings.Contains(topLineFields[2], "HTTP/1.1") {
+	
+	if topLineFields[0] != "GET" || strings.Contains(topLineFields[1], "..") || !strings.Contains(topLineFields[2], "HTTP/1.1") {
 		return req, false
 	}
 	req.Method = topLineFields[0]
